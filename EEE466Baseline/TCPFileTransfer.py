@@ -13,7 +13,10 @@ from EEE466Baseline.CommunicationInterface import CommunicationInterface
 """
     NOTES: Not handling message sending of over 1024 bytes for now. 
         Brown gave idea that when the server is receiving spliced mgs, tag some end signal at the end of msg to let
-        the server know thats the end of it. 
+        the server know thats the end of it.
+
+    STATUS: Implement buffer overflow handling next, where we splice messages that are longer
+    than 1024 bytes. 
 
 """
 
