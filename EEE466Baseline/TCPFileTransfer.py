@@ -3,6 +3,7 @@
 
 import os
 import socket
+import math
 from constants_file import DeviceTypes
 
 from EEE466Baseline.CommunicationInterface import CommunicationInterface
@@ -14,6 +15,11 @@ from EEE466Baseline.CommunicationInterface import CommunicationInterface
     NOTES: Not handling message sending of over 1024 bytes for now. 
         Brown gave idea that when the server is receiving spliced mgs, tag some end signal at the end of msg to let
         the server know thats the end of it.
+        
+        For now, we'll be making our own "protocol" of how we're sending messages more than 1024 bytes over. 
+        Whenever we send a message, we slice up the bytes, let the receiving device know how many slices we're sending
+        their way, and then we send the bytes accordingly. The receiving device will receive the first byte telling
+        them how many slices to expect, and calls recv() the appropriate amount of times to receive it. 
 
     STATUS: Implement buffer overflow handling next, where we splice messages that are longer
     than 1024 bytes. 
@@ -163,8 +169,10 @@ class TCPFileTransfer(CommunicationInterface):
         # If the current device is a server...
         if self.device_type == DeviceTypes.TCPSERVER:
 
+            self.slice_and_send(self.server_connection, send_msg);
+
             # Send messages via utf-8, don't handle msgs > 1024 bytes
-            self.server_connection.send(send_msg);
+            # self.server_connection.send(send_msg);
 
         # If the current device is a client...
         elif self.device_type == DeviceTypes.TCPCLIENT:
@@ -203,8 +211,11 @@ class TCPFileTransfer(CommunicationInterface):
         # If the current device is a client...
         elif self.device_type == DeviceTypes.TCPCLIENT:
 
+            # Testing recv_and_parse()
+            recv_msg = self.recv_and_parse(self.initial_sock);
+
             # Block and wait, don't handle for more than 1024 bytes for now
-            recv_msg = self.initial_sock.recv(1024);
+            # recv_msg = self.initial_sock.recv(1024);
 
         # Decode and return received command
         return recv_msg.decode();
@@ -216,3 +227,86 @@ class TCPFileTransfer(CommunicationInterface):
         connection.
         """
         print("TODO implement this method")
+
+
+    # ---- Making my own functions ---
+
+    def slice_and_send(self, in_socket, in_data):
+        """
+        Function slices up message in 1024 byte groupings. The sending device then sends
+        the separate messages in order to the device on the other side of the TCP connection.
+
+        ONLY HANDLES STRINGS FOR NOW
+
+        Args:
+             <in_socket : socket > : A TCP socket object through which the message is to be sent.
+             <in_data : bytes> : The data which is to be sent to the other device in the TCP connection.
+             Returns: nothing
+        """
+
+        # First, find how many slices of 1024 bytes we are sending
+        bytes_len = len(in_data);
+        slice_num = math.ceil(bytes_len / 1024)
+
+        # Testing
+
+        print("Bytes len is " + str(bytes_len) + "; Slice number is " + str(slice_num));
+
+        # First send the slice number (converted to string, then into bytes for easiest time)
+        in_socket.send(bytes(str(slice_num), 'utf-8'));
+
+        # Send the slices of the bytes next
+        # slice_pointer = 0;
+        for i in range(slice_num):
+
+            # Check if sending last slice (is likely not exactly 1024 bytes)
+            if i == slice_num - 1:
+
+                start_ind = i * 1024;
+                slice_bytes = in_data[start_ind: ]; # Send like this for good practice
+
+            # Otherwise, compute start and end indices and send
+            else:
+
+                start_ind = i * 1024;
+                end_ind = (i + 1) * 1024 ;
+                slice_bytes = in_data[start_ind : end_ind]
+
+            in_socket.send(slice_bytes);
+
+        return;
+
+
+    def recv_and_parse(self, in_socket):
+        """
+
+        Function receives messages of max size 1024 bytes from sender, and reconstructs
+        the original message accordingly.
+
+        ONLY HANDLES STRINGS FOR NOW
+
+        Args:
+            <in_socket : socket> : A TCP socket object to receive the msg through
+            Returns: The reconstructed stream of bytes received in slices from the sender.
+        """
+
+        # Creating dummy var to contain total received data
+        recv_data = b'';
+
+        # Receive the number of slices from sender (from bytes, conv to str then int).
+        # Shouldn't be more than 5 bytes lol
+        slice_num = int(in_socket.recv(5).decode())
+
+        # Next, call recv() slice_num number of times and receive the slices and reconstruct through concatenation
+        for i in range(slice_num):
+            recv_data += in_socket.recv(1024);
+
+        return recv_data;
+
+
+
+
+
+
+
+

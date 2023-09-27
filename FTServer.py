@@ -5,10 +5,6 @@ from EEE466Baseline.TCPFileTransfer import TCPFileTransfer as CommunicationInter
 # DO NOT import socket
 
 
-# Lmao made a change.
-
-
-
 class FTServer(object):
     """
     This class creates a server object to send and receive files with a client. It can use different interfaces that
@@ -42,7 +38,245 @@ class FTServer(object):
         print(f"TCPSERVER STATUS: Received msg is {recv_msg}.");
 
         # Send some random msg to the server for now
-        self.comm_inf.send_command("RANDOM COMMAND FROM SERVER");
+        self.comm_inf.send_command("""
+        
+        
+                                                   x xxxx
+                                             x x x         x
+                                        x xx                x
+                                 x  xxx
+                             x
+xx                   x  x  x                                  x
+               x  x
+             x                                                  x
+   xx xx  x
+      x
+                                                                  x
+
+         x                                                         x
+                                                                     x
+            x
+
+              x                                                        x
+
+                x                                                       x
+
+                                                                         x
+                                                                      xxx
+                    x                                              xxx     x
+                                                              xx x          xx
+                                                            xx
+                      x                                 xxxx                 x
+                                                    x x                      xxx
+                        x                       x x                        xxx x
+                                           x  x                   x     x       x
+                          x             x x                   x x
+                                    x x                  x xx                    x
+                              x  x                   x x                           x
+                           xx                     xx                               x
+                           x                  x x                                   x
+                           x            x   x                                       x                                                                           x
+                                                                                      x                                                                     x x x x
+                            x      x                                                   x                                                                x  x
+                              xxx                                                       x                                                        xxxx
+                                                                                         x                                                 x xx x
+                            x                                                             x    x                                 x  x xx
+                                                                                           xxx                               x xx
+                            x                                                                xx  x                     xxxxx
+                                                                                               xxx               x x x
+                            x                                                                    xx     x     x
+                                                                                                  x   x
+                             x                                                            xx   x  x
+                                                                                x    x
+                             x
+                                                                xxx xxx xxxxxxx xxxxxx   x xxxxx
+                             x                               xxx       x                        x xx
+                             x                         xxxx x       x                               x x
+                                                   x xx       xx  x                                    xx x
+                             x                   xx      x  x                                              x
+                             x                x x    x  x                       xx x                        x x x
+                             x             xx    x                                   x                           xxx x
+                                         xx                                            xx                            x x
+                             x       xxxx                                                xx                              x        xx
+                             x    x  x                                                    x                                          x
+                             x x x  xx                                                    x                                x          xx
+                        x           xxx xxx                                             xxx                                 x          x
+                     x             x        xx  x x                                    x                                     x          x
+               xx                xx                xx xx x xxxx xxx xxx x x xxx xx xxxxx    xxxxxxxxxxxx x     xx             x         x
+            xx                                         x                              x                           xxxxxxxxx    x x x x xx
+         xx                     x                      x                         xxxx xxx              x                   xxxx x
+                               x                       x                        xx xx xxxx             x                   xxxx  x
+                               x                       x                      xxxxxxx xxxx             x                  xxxxxx xx
+                              x                         x                  xx     xxxxxx x                               xxxx xx xx
+                              x                         xx                 x  x    xxxx x              x                 xx  x x xx
+                              x                          x                 xx x  xxxxx                 x                xx   x xx  x
+                              x                           xx                  xxxx                                     xxxxxxxxxx  x
+                              x                             xx               xxx                                       xxxxxxxxx   x
+                              x                               xx xxx x x xx x                            x              xx xxx     x
+                              x                                                                            x x             xx      x
+                               x                                               x x xx xx xxxx x               xxx        xx       x
+                               x                                             xx                xxx               xxxxxxx          x
+                               xx                                           x                     xx                              x
+                                x                                        xx                        xx                             x
+                                 x                                      xx                           x                            x
+                                 x                                     x                              x                          x
+                                                           x           x                               x                         x
+                                                                      x
+                                 x                          x        x                                 x                         x
+                                  x                                  x                                 x                         x
+                                  xx                        x        x             xxx     x            x                       x
+                                   xx                               x          x x    x    x            x                       x
+                                     xx                     x      x       xxxx                         x                      x
+                                      x x                          x     xx                x            x              x
+                                         x x                x     x    x                   x            x             x       x
+                                              x                   x   x                    x                     xxxx        x
+                                               xx           x     x  x                     x           xx       xx          x
+                                                  xx        x     x x                      x           x      x            x
+                                                     xx                                               xx    x
+                                                       x x  x     xx                       x             x x             xx
+                                                         x x x   x                         x         x x                x
+                                                             xxxx                          x        x                  x
+                                                   x            x                          x      x                  x                                                                                 ┌────────────────────────────────────────────────────┐
+                                                   x                   x  x                 x  xx                  x                                                                                   │                                                    │
+                                                  xx                          x  x          xxx               x x                                                                                      │                                                    │
+                                                  x                                  x    x  x          x    x                                                                                         │                                                    │
+                                                 xx                                            x xxx xx                                                                                                │            │                                       │
+                                                 x                                                                                                                                                     │    │       │     │                 │               │
+                                                x                                                                                                                                                      │    │       │     │                 │               │
+                                               x                                                                                                                                                       │    │       │     │ │               │               │
+                                               x                                                                                                                                                       │    │       │     │ │               │               │
+                                              x                                                                                                                                                        │    │       │     │ │               ├───┬──────┐    │
+                                             x                                                                                                                                                         │    │       │     │ │               │   │      │    │
+                                             x                                                                                                                                                         │    │       │     ├─┼─────────────┐ │   │      │    │
+                                            xx                                                                                                                                                         │    │       │     │ │             │ │   │      │    │
+                                                                                                                                                                                                       │   ┌┤       │     └─┼────┬──      │ │   │      │    │
+                                           x                                                                                                                                                           │   ││       │       │    │        │ │   │      │    │
+                                          x                                                               xxx xx                                                                                       │   ├┴───────┼───────┼─── │        │ │   │      │    │
+                                          x                                xx                          xx      x                                                                                       │   │        │       │    │        │ │   │      │    │
+                                                                          x  x      xxx              xx       xx       xx x  xxx                                                                       │   │        │       │    │        │ │   │      │    │
+                                                                      x   x    x    x  x           x         x      x x         x                                                                      │   │        │       └────┼───     │ │   │      │    │
+                                                                      x  x         x    xx        x         xx       x           x                                                                     │   │        │            │        │ │   │      │    │
+                                                                         x     x  x              x         xxx       x           x                                                                     │   │        │            │        │ │   │      │    │
+                                       x                               xx       xx        x               xx x       x           x                                                                     │   │        │            │        │ │   │      │    │
+                                                                                xx         x     x       xx  x       x            x                                                                    │   │        │            │        │ │   │      │    │
+                                                                       xx       x          x     x      xx           x            x                                                                    │   │        │            │        │ │   │      │    │
+                                                                                x          x     x           xx      x            x                                                                    │   │   │    │            │        │ │   │      │    │
+                                    x                                           x          x     xx   xx      x      x            x                                                                    │   │   │    │            │        │ │   │      │    │
+                                                                        x                  x       xxx        xx                  x                                                                    │   │   │    │            │        │ │   │      │    │
+                                   x                                    x                                            x            x                                                                    │   │   │    │      │     │        │ └───┼────  │    │
+                                  x                                     x                                                                                                                              │   │   │    │      │     │        │     │           │
+                                x                                       x                                                                                                                              │   │   │    │      │  ───┼─┐      │     │           │
+                                                                                                                                                                                                       │   │   │    │      │     │ │      │     │           │
+                                x                                                                                                                                                                      │   │   │    │      │     │ │      │     │           │
+                               x                                                                   x                                                                                                   │   │   │    │      │     │ │      │     └────       │
+                              x                                                                    x                                                                                                   │   │   │    │      │    ─┘ │      │                 │
+                                                                                                   x                   xx                                                                              │   │   └────┼────  │       │      │                 │
+                              x                                                                    x                  x x                                                                              │   │        │      │       │      │                 │
+                              x                                                                    x                x   x                                                                              │   │        │      │       │      │                 │
+                              x                                                                    x              x     x                                                                              │   │        │      │       │      │                 │
+                                                                                                                 x                                                                                     │   │        │      │       │      │                 │
+                             x                                                                     x            x                                                                                      │   │        │      └───────┼────  │                 │
+                             x                                                           xxxxx  x   x xx xxx    x                                                                                      │   │        │              │      │                 │
+                                                                                                                                                                                                       │   │        └──────────────┴──────┴───────────────  │
+                            xx                                       x                             x            x                                                                                      │   │                                                │
+                            x                                        x          xx     x                                                                                                               │   └──────────────────────                          │
+                           x xx                                       x         xx     x           x            x   x    x        x  xx                                                                │                                                    │
+                             x  x                                                     x            x           x                                                                                       └────────────────────────────────────────────────────┘
+                          x                                            x       x                  xx    x  x     x
+                          x x     x                                    x     xx  x xx              x
+                          x x        x                                 x    x    xx
+                          x x         x                                                                           x
+                                       x                                xxx                                       x
+                         x  x            x                                                                        xx
+                         x  x
+                         x                x
+                            x               x
+                        x
+                             x                x
+                        x    x
+                        x
+                             x                  x
+                        x
+                             x                    x
+                              x                    x
+                       x                            x
+                       x      x                      x
+                       x                             x
+                              x                      x
+                       x       x                      x
+                       x                              x
+                       x       x                      xx
+                       x                               xx
+                       x       x
+                       x
+                       x       x
+                       x
+                       x        x
+                       x
+                       x        x
+                       xx
+                        x        x
+
+                                 x
+
+                                  x
+                                  x
+
+                                   x
+
+                                    x
+                                    x
+
+                                    x
+                                    x
+
+                                     x
+                                     x
+
+                                     x
+                                      x
+                                      x
+
+                                      xx
+
+                                        xx
+
+                                          xx x
+                                            x
+                                         x   xx
+                                         x
+                                                xx
+                                         x
+                                                  x
+                                         x          x
+                                        x             x
+                                        x
+                                        x              xx
+
+                                       x                 x
+
+                                       x                  x
+                                       x                   x
+                                       x
+                                       x                    x
+                                       x                      x
+                                       x                       x
+                                       x                        x
+                                       x                         x
+                                        x                         x
+                                        x                         x
+                                        x                          x
+                                         x                         xx
+                                         x
+                                          x
+                                          x
+                                           x
+                                           x
+                                           x
+                                           x
+                                           x
+    
+""");
 
 
     # EXAMPLE METHOD
