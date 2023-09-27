@@ -41,7 +41,19 @@ class FTServer(object):
         # self.comm_inf.send_command("""FILLER COMMAND""");
 
         # Start testing the sending of a file
-        self.comm_inf.send_file(".\Server\Send\server_text_02.txt");
+        #self.comm_inf.send_file(".\Server\Send\server_text_02.txt");
+
+        # Testing the receiving of a file
+        #self.comm_inf.receive_file(".\Server\Receive\client_text_02.txt");
+
+        # --- Testing sending discrepancies ---
+
+        self.comm_inf.receive_file(".\Client\Receive\client_text_02.txt");
+        print(self.comm_inf.receive_command());
+
+
+
+
 
 
     # EXAMPLE METHOD

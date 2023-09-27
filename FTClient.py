@@ -40,7 +40,15 @@ class FTClient(object):
         # print(f"TCPCLIENT STATUS: Received msg is {recv_msg}.");
 
         # Testing the receiving of a file
-        self.comm_inf.receive_file(".\Client\Receive\server_text_02.txt");
+        #self.comm_inf.receive_file(".\Client\Receive\server_text_02.txt");
+
+        # Testing the sending of a file
+        #self.comm_inf.send_file(".\Client\Send\client_text_02.txt");
+
+        # --- Testing sending discrepancies ---
+
+        self.comm_inf.send_command("FILLER COMMAND")
+        self.comm_inf.send_file(".\Client\Send\client_text_02.txt");
 
 
 

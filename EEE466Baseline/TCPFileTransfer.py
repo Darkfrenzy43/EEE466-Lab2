@@ -4,6 +4,7 @@
 import os
 import socket
 import math
+from sys import stderr
 from constants_file import DeviceTypes
 
 from EEE466Baseline.CommunicationInterface import CommunicationInterface
@@ -32,9 +33,7 @@ from EEE466Baseline.CommunicationInterface import CommunicationInterface
         for the writing file portion. 
 
     STATUS: 
-    1. Implement the sending of files over the network. Might need to do some research (involves opening up files, 
-        and sending contents appropriately). 
-    2. Implement the reading of commands, and setting up the rest of the program in general
+        2. Implement the reading of commands, and setting up the rest of the program in general
     
     QUESTIONS:
     1. Are we going to implement errors if we try to send a file, but the receiving device calls receive command?
@@ -81,6 +80,7 @@ class TCPFileTransfer(CommunicationInterface):
 
         :param source_port: port that provides a service.
         """
+
         #First, change the device type to TCP server
         self.device_type = DeviceTypes.TCPSERVER;
 
@@ -155,25 +155,35 @@ class TCPFileTransfer(CommunicationInterface):
         :param file_path: the location of the file to send. E.g., ".\Client\Send\\ploadMe.txt".
         """
 
-        # No need to send the file name since the receiver will
-        # specify the complete file path to place the file on their side
-
         # Print statement for status
         path_separated = file_path.split('\\');
         file_name = path_separated[-1];
         print(f"\n{self.device_type} STATUS: Sending file <{file_name}> in directory [{file_path[:-len(file_name)]}] "
               f"to other device...")
 
+        # Determine the socket to use to send, depending on the type of sending device
+        sending_socket = self.initial_sock;  # Default to client
+        if self.device_type == DeviceTypes.TCPSERVER:
+            sending_socket = self.server_connection;
+
+        # Check if we have a connection first. If not, stop function
+        if sending_socket is None:
+            self.error("Can not send file since no socket object exists.");
+            return;
+
+        # Next, send "FILE SEND" to other device to let them know that's
+        # what is being sent. Wait for a response before continuing. If error received, handle accordingly.
+        sending_socket.send(b'FILE SEND');
+        if sending_socket.recv(10) != b'ACK':
+            self.error("Other device refused to receive file. Check format of data being sent.")
+            self.close_connection();
+            return;
+
         # Open 'utf-8' file to read with with(), specifying the encoding [ref Notes 3]...
         with open(file_path, encoding = 'utf-8') as open_file:
 
             # Read the file contents into bytes (.read() returns a string, convert to bytes)
             file_data = bytes(open_file.read(), 'utf-8');
-
-            # Determine the socket to use to send, depending on the type of sending device
-            sending_socket = self.initial_sock;  # Default to client
-            if self.device_type == DeviceTypes.TCPSERVER:
-                sending_socket = self.server_connection;
 
             # Send the data
             self.slice_and_send(sending_socket, file_data);
@@ -199,16 +209,32 @@ class TCPFileTransfer(CommunicationInterface):
         # Printing the status
         path_separated = file_path.split('\\');
         file_name = path_separated[-1];
-        print(f"\n{self.device_type} STATUS: Receiving file from other device and placing it in directory "
-              f"[{file_path[:-len(file_name)]}] under file name <{file_name}>.")
+        print(f"\n{self.device_type} STATUS: Receiving file and placing it in directory "
+              f"[{file_path[:-len(file_name)]}] under name <{file_name}>.")
+
+        # Determine the socket to receive from, depending on the type of current receiving device
+        receiving_socket = self.initial_sock;  # Default to client
+        if self.device_type == DeviceTypes.TCPSERVER:
+            receiving_socket = self.server_connection;
+
+        # Check if we have a connection first. If not, stop function
+        if receiving_socket is None:
+            self.error("Can not receive file since no socket object exists.");
+            return;
+
+        # Receive FILE SEND first from sending machine to ensure that we are going to receive a file.
+        # Send ACK back. If anything else received, reply and throw error.
+        if receiving_socket.recv(10) == b'FILE SEND':
+            receiving_socket.send(b'ACK');
+        else:
+            receiving_socket.send(b'ERROR');
+            self.error("Detected other device not sending a file. Check format of data expected to receive.")
+            self.close_connection();
+            return;
 
         # Open the file to write the received file info. If none exists, creates one
         with open(file_path, 'w', encoding = 'utf-8') as open_file:
 
-            # Determine the socket to receive from, depending on the type of current receiving device
-            receiving_socket = self.initial_sock;  # Default to client
-            if self.device_type == DeviceTypes.TCPSERVER:
-                receiving_socket = self.server_connection;
 
             # Receiving the data from the sender
             recv_data = self.recv_and_parse(receiving_socket).decode();
@@ -229,31 +255,30 @@ class TCPFileTransfer(CommunicationInterface):
         :param command: The command you wish to send to the server.
         """
 
+        # Determine the socket to use to send, depending on the type of sending device (default to client)
+        sending_socket = self.initial_sock;
+        if self.device_type == DeviceTypes.TCPSERVER:
+            sending_socket = self.server_connection;
+
+        # Check if we have a connection first. If not, stop function
+        if sending_socket is None:
+            self.error("Can not send command since no socket object exists.");
+            return;
+
+        # First, send "FILE SEND" to other device to let them know that's
+        # what is being sent. Wait for a response before continuing. If error received, handle accordingly.
+        sending_socket.send(b'COMM SEND');
+        if sending_socket.recv(10) != b'ACK':
+            self.error("Other device refused to receive command. Check format of data being sent.")
+            self.close_connection();
+            return;
+
         # Convert msg into utf-8 bytes
         send_data = bytes(command, 'utf-8');
 
-        # If the current device is a server...
-        if self.device_type == DeviceTypes.TCPSERVER:
+        # Send message to the client (slice up into 1028 byte msgs if needed)
+        self.slice_and_send(sending_socket, send_data);
 
-            # Send message to the client (slice up into 1028 byte msgs if needed)
-            self.slice_and_send(self.server_connection, send_data);
-
-        # If the current device is a client...
-        elif self.device_type == DeviceTypes.TCPCLIENT:
-
-            # Send message to the server (slice up into 1028 byte msgs if needed)
-            self.slice_and_send(self.initial_sock, send_data);
-
-
-
-    def error(self, error_msg):
-        """
-        OPTIONAL error method can be used to display an error to the client or server, or can be used to send
-        an error message across an open connection if something fails.
-
-        :param error_msg: The error message you would like to display.
-        """
-        print("TODO implement this method")
 
     def receive_command(self):
         """
@@ -263,20 +288,29 @@ class TCPFileTransfer(CommunicationInterface):
         :return: the command received and any parameters.
         """
 
-        # Initializing dummy var to remove warnings
-        recv_msg = None;
-
-        # If the current device is a server...
+        # Determine the socket to receive from, depending on the type of current receiving device
+        receiving_socket = self.initial_sock;  # Default to client
         if self.device_type == DeviceTypes.TCPSERVER:
+            receiving_socket = self.server_connection;
 
-            # Receive the data byte stream from the client
-            recv_msg = self.recv_and_parse(self.server_connection);
+        # Check if we have a connection first. If not, stop function
+        if receiving_socket is None:
+            self.error("Can not receive command since no socket object exists.");
+            return;
 
-        # If the current device is a client...
-        elif self.device_type == DeviceTypes.TCPCLIENT:
+        # Receive FILE SEND first from sending machine to ensure that we are going to receive a file.
+        # Send ACK back. If anything else received, reply and throw error.
+        if receiving_socket.recv(10) == b'COMM SEND':
+            receiving_socket.send(b'ACK');
+        else:
+            receiving_socket.send(b'ERROR');
+            self.error("Detected other device not sending a command. Check format of data expected to receive.")
+            self.close_connection();
+            return;
 
-            # Receive the data bytes tream from the server
-            recv_msg = self.recv_and_parse(self.initial_sock);
+
+                # Receive the data bytes tream from the server
+        recv_msg = self.recv_and_parse(receiving_socket);
 
         # Decode and return received command
         return recv_msg.decode();
@@ -287,10 +321,29 @@ class TCPFileTransfer(CommunicationInterface):
         If an unrecoverable error occurs or a QUIT command is called the server and client and tear down the
         connection.
         """
-        print("TODO implement this method")
+
+        print(f"\n{self.device_type} STATUS: Shutting down connection...");
+        if self.device_type == DeviceTypes.TCPSERVER:
+            self.server_connection.close();
+        elif self.device_type == DeviceTypes.TCPCLIENT:
+            self.initial_sock.close();
+
+        # Resetting the socket attributes (covers both cases of client and server)
+        self.initial_sock = None;
+        self.server_connection = None;
+
+    def error(self, error_msg):
+        """
+        OPTIONAL error method can be used to display an error to the client or server, or can be used to send
+        an error message across an open connection if something fails. Closes the connection after.
+
+        :param error_msg: The error message you would like to display.
+        """
+
+        print(f">>> {self.device_type} ERROR: {error_msg} <<<") # , file = stderr
 
 
-    # ---- Making my own functions ---
+    # --------- Making my own functions --------
 
     def slice_and_send(self, in_socket, in_data):
         """
