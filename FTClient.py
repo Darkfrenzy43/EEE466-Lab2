@@ -32,7 +32,7 @@ class FTClient(object):
         self.comm_inf.initialize_client(self.server_address[0], self.server_address[1]);
 
         # Send some random msg to the server for now
-        self.comm_inf.send_command("RANDOM COMMAND");
+        self.comm_inf.send_command("FILLER COMMAND");
 
         # Receive a message from the server for now...
         print("TCPCLIENT STATUS: Waiting to receive msg from client...");
