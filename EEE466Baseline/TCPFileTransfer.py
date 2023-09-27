@@ -24,11 +24,21 @@ from EEE466Baseline.CommunicationInterface import CommunicationInterface
         slice number count, essentially filling up the buffer with data more than the slice number, meaning
         this is something that we can't convert back to an integer and running into an error. Essentially,
         I'm trying to not let them step over eachother by adding an ack in between the two steps. 
+        
+        3. For some reason when opening the file data in send_file(), when I used with open("file.txt", 'r') and
+        then tried to read the file with open_file.read(), I would get some sort of UnicodeDecodeError where
+        characters map to <undefined>. Did some research and if I specify the encoding during the file opening to
+        utf-8 (with open("file.txt", 'utf-8')) the issue is resolved. Probably will need to do the same thing
+        for the writing file portion. 
 
     STATUS: 
     1. Implement the sending of files over the network. Might need to do some research (involves opening up files, 
         and sending contents appropriately). 
     2. Implement the reading of commands, and setting up the rest of the program in general
+    
+    QUESTIONS:
+    1. Are we going to implement errors if we try to send a file, but the receiving device calls receive command?
+    Like a mismatching send-receive call. 
     
 
 """
@@ -144,7 +154,34 @@ class TCPFileTransfer(CommunicationInterface):
 
         :param file_path: the location of the file to send. E.g., ".\Client\Send\\ploadMe.txt".
         """
-        print("TODO implement this method")
+
+        # No need to send the file name since the receiver will
+        # specify the complete file path to place the file on their side
+
+        # Print statement for status
+        path_separated = file_path.split('\\');
+        file_name = path_separated[-1];
+        print(f"\n{self.device_type} STATUS: Sending file <{file_name}> in directory [{file_path[:-len(file_name)]}] "
+              f"to other device...")
+
+        # Open 'utf-8' file to read with with(), specifying the encoding [ref Notes 3]...
+        with open(file_path, encoding = 'utf-8') as open_file:
+
+            # Read the file contents into bytes (.read() returns a string, convert to bytes)
+            file_data = bytes(open_file.read(), 'utf-8');
+
+            # Determine the socket to use to send, depending on the type of sending device
+            sending_socket = self.initial_sock;  # Default to client
+            if self.device_type == DeviceTypes.TCPSERVER:
+                sending_socket = self.server_connection;
+
+            # Send the data
+            self.slice_and_send(sending_socket, file_data);
+
+        # Print status
+        print(f"{self.device_type} STATUS: File <{file_name}> finished sending.")
+
+
 
     def receive_file(self, file_path):
         """
@@ -158,7 +195,29 @@ class TCPFileTransfer(CommunicationInterface):
         :param file_path: this is the destination where you wish to save the file. E.g.,
         ".\Server\Receive\\ploadMe.txt".
         """
-        print("TODO implement this method")
+
+        # Printing the status
+        path_separated = file_path.split('\\');
+        file_name = path_separated[-1];
+        print(f"\n{self.device_type} STATUS: Receiving file from other device and placing it in directory "
+              f"[{file_path[:-len(file_name)]}] under file name <{file_name}>.")
+
+        # Open the file to write the received file info. If none exists, creates one
+        with open(file_path, 'w', encoding = 'utf-8') as open_file:
+
+            # Determine the socket to receive from, depending on the type of current receiving device
+            receiving_socket = self.initial_sock;  # Default to client
+            if self.device_type == DeviceTypes.TCPSERVER:
+                receiving_socket = self.server_connection;
+
+            # Receiving the data from the sender
+            recv_data = self.recv_and_parse(receiving_socket).decode();
+
+            # Write received data to the file
+            open_file.write(recv_data);
+
+        print(f"{self.device_type} STATUS: File <{file_name}> fully received.")
+
 
     def send_command(self, command):
         """
