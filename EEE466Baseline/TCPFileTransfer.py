@@ -31,14 +31,17 @@ from EEE466Baseline.CommunicationInterface import CommunicationInterface
         characters map to <undefined>. Did some research and if I specify the encoding during the file opening to
         utf-8 (with open("file.txt", 'utf-8')) the issue is resolved. Probably will need to do the same thing
         for the writing file portion. 
+        
+        4. Added a few more "verifications" when we are sending and receiving data across the network:
+            1. Checking to see if a connection actually exists before we send/receive data. If not, we notify the 
+                user function.
+            2. The sending device checks if the receiving device is expecting the data format the former is sending. 
+                ie. If the sender is sending a file, but it detects the receiving device is expecting a command,
+                then errors are thrown on both sides and closes the connection. 
 
     STATUS: 
         2. Implement the reading of commands, and setting up the rest of the program in general
-    
-    QUESTIONS:
-    1. Are we going to implement errors if we try to send a file, but the receiving device calls receive command?
-    Like a mismatching send-receive call. 
-    
+        
 
 """
 
@@ -416,9 +419,31 @@ class TCPFileTransfer(CommunicationInterface):
         return recv_data;
 
 
+def verify_sender(sending_socket, ack_msg):
+    """ Function verifies if the sending machine has a valid connection working. Next,
+    verifies if the receiving machine is expecting the same data format that is to be sent.
+    If ever a condition is violated, errors are thrown, connections are closed, and function returns true.
+
+    Args:
+        <sending_socket : socket> : The socket to send data through
+        <ack_msg : bytes> : The ack message that is to be expected from the receiver to check format agreement.
+        returns: returns 1 if an error is detected. Otherwise, returns 0.
+    """
+
+    pass;
 
 
+def verify_recveiver(receiving_socket, ack_msg):
+    """ Function verifies if the receiving machine has a valid connection working. Next,
+    verifies if the sending machine is sending the same data that this machine is receiving.
+    If ever a condition is violated, errors are thrown, connections are closed, and function returns true.
 
+    Args:
+        <receiving_socket : socket> : The socket to receive data through
+        <ack_msg : bytes> : The ack message the receiver will send to the sender to check format agreement.
+        returns: returns 1 if an error is detected. Otherwise, returns 0.
+        """
 
+    pass;
 
 
