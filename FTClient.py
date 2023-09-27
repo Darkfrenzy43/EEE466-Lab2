@@ -31,24 +31,10 @@ class FTClient(object):
         # For now, try connecting to server
         self.comm_inf.initialize_client(self.server_address[0], self.server_address[1]);
 
-        # # Send some random msg to the server for now
-        # self.comm_inf.send_command("FILLER COMMAND");
-        #
-        # # Receive a message from the server for now...
-        # print("TCPCLIENT STATUS: Waiting to receive msg from client...");
-        # recv_msg = self.comm_inf.receive_command();
-        # print(f"TCPCLIENT STATUS: Received msg is {recv_msg}.");
-
-        # Testing the receiving of a file
-        #self.comm_inf.receive_file(".\Client\Receive\server_text_02.txt");
-
-        # Testing the sending of a file
-        #self.comm_inf.send_file(".\Client\Send\client_text_02.txt");
-
         # --- Testing sending discrepancies ---
 
-        self.comm_inf.send_command("FILLER COMMAND")
-        self.comm_inf.send_file(".\Client\Send\client_text_02.txt");
+        self.comm_inf.send_command("FILLER COMMAND");
+        self.comm_inf.send_file(".\Client\Send\client_text_01.txt");
 
 
 

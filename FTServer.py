@@ -32,27 +32,11 @@ class FTServer(object):
         self.comm_inf.initialize_server(self.server_source_port);
         self.comm_inf.establish_server_connection();
 
-        # # Receive a message from a user for now...
-        # print("TCPSERVER STATUS: Waiting to receive msg from client...");
-        # recv_msg = self.comm_inf.receive_command();
-        # print(f"TCPSERVER STATUS: Received msg is {recv_msg}.");
-        #
-        # # Send some random msg to the server for now
-        # self.comm_inf.send_command("""FILLER COMMAND""");
-
-        # Start testing the sending of a file
-        #self.comm_inf.send_file(".\Server\Send\server_text_02.txt");
-
-        # Testing the receiving of a file
-        #self.comm_inf.receive_file(".\Server\Receive\client_text_02.txt");
 
         # --- Testing sending discrepancies ---
 
-        self.comm_inf.receive_file(".\Client\Receive\client_text_02.txt");
         print(self.comm_inf.receive_command());
-
-
-
+        self.comm_inf.receive_file(".\Server\Receive\client_text_01.txt");
 
 
 
