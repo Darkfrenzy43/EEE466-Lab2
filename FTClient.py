@@ -26,15 +26,36 @@ class FTClient(object):
         :return: The program exit code.
         """
 
+        print("CLIENT STATUS: Client started. Looking for server to connect to...")
+
         # Upon initialization, connect client to the server
         self.comm_inf.initialize_client(self.server_address[0], self.server_address[1]);
 
+        # Client main loop:
+        while True:
 
-        # Getting user input (stripped of whitespace)
-        user_input = input("\nType in a command to send to server: \n> ").strip();
+            # Getting user input (stripped of whitespace)
+            user_input = input("\nType in a command to send to server: \n> ");
 
-        # Send user input to server
-        self.comm_inf.send_command(user_input);
+            # Send user input to server
+            self.comm_inf.send_command(user_input);
+
+            # Wait for a server response, decode received msg accordingly:
+            # "TOO MANY ARGS" --> client sent too many args to the server.
+            # "UNRECOG COMM"  --> client sent an unrecognizable command to server.
+            # "NONEXIST PATH" --> client sent a non-existent file path to server.
+            server_resp = self.comm_inf.receive_command();
+            if server_resp == "TOO MANY ARGS":
+                print(f"\nCLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
+                continue;
+            elif server_resp == "UNRECOG COMM":
+                print(f"\nCLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
+                continue;
+            elif server_resp == "NONEXIST PATH":
+                print(f"\nCLIENT SIDE ERROR: Last command had a nonexistent file path. Verify and try again.");
+                continue;
+
+
 
 
 

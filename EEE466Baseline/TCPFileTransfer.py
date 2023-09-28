@@ -309,7 +309,7 @@ class TCPFileTransfer(CommunicationInterface):
         :param error_msg: The error message you would like to display.
         """
 
-        print(f">>> {self.device_type} ERROR: {error_msg} <<<") # , file = stderr
+        print(f">>> {self.device_type} COMMS ERROR: {error_msg} <<<") # , file = stderr
 
 
     # --------- Making my own Non-API functions --------
