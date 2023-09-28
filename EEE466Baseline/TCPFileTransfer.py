@@ -4,7 +4,6 @@
 import os
 import socket
 import math
-from sys import stderr
 from constants_file import DeviceTypes
 
 from EEE466Baseline.CommunicationInterface import CommunicationInterface

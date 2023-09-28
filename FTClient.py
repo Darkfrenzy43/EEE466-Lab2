@@ -14,32 +14,29 @@ class FTClient(object):
     def __init__(self):
         self.comm_inf = CommunicationInterface()
 
-        # Hard code server address fornow
+        # Hard code server address for now
         self.server_address = ('localhost', 9000);
 
     def run(self):
         """
 
-        For now, conduct simple tests of getting TCP connection to server.
-
-        PLAN: Implement the sending of commands to the server, and having the server
-        parse the commands from there.
+        Upon initialization, connect to server.
+        Prompt user for input to send as commands to server.
 
         :return: The program exit code.
         """
 
-        # For now, try connecting to server
+        # Upon initialization, connect client to the server
         self.comm_inf.initialize_client(self.server_address[0], self.server_address[1]);
 
-        # --- Testing sending discrepancies ---
-
-        self.comm_inf.send_command("FILLER COMMAND");
-        self.comm_inf.send_file(".\Client\Send\client_text_01.txt");
-
+        # Getting user input (don't clean for now)
+        user_input = input("\nType in a command to send to server: \n> ");
+        self.comm_inf.send_command(user_input);
 
 
 
-    # EXAMPLE METHOD
+
+    # EXAMPLE METHOD - lol do we even need this
     def send_cmd(self, command: str, param: str = ""):
         pass
 

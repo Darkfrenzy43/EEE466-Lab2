@@ -4,6 +4,12 @@ from EEE466Baseline.TCPFileTransfer import TCPFileTransfer as CommunicationInter
 
 # DO NOT import socket
 
+""" 
+    Notes:
+    
+        1. I have not yet decided how I want the server to run commands after I parse them. 
+
+"""
 
 class FTServer(object):
     """
@@ -20,29 +26,37 @@ class FTServer(object):
     def run(self):
         """
 
-        For now, conduct simple tests of getting TCP connection from client
 
-        PLAN: Implement the receivng of commands from the client, conduct command
-        parsing on the server side.
 
         :return: The program exit code.
         """
 
-        # For now, try having the server receive connection from client
+        # Upon initialization, open port 9000 on server and wait for connections from clients.
         self.comm_inf.initialize_server(self.server_source_port);
         self.comm_inf.establish_server_connection();
 
-
-        # --- Testing sending discrepancies ---
-
-        print(self.comm_inf.receive_command());
-        self.comm_inf.receive_file(".\Server\Receive\client_text_01.txt");
+        # Waiting to receive a command from the client...
+        client_comm = self.comm_inf.receive_command();
+        print(client_comm);
 
 
 
     # EXAMPLE METHOD
-    def parse_command(self):
-        pass
+    def parse_command(self, in_command):
+        """ Function receives in a raw client command. Parses it, and
+        TODO: THIS PART NOT DECIDED YET. how we notify the server this is what is wanted.
+
+        Do we wanna have the commands get handled and executed from here? If so, might need to rename function"""
+
+        # Use a delimiter to parse command
+        parsed_command = in_command.split(',');
+
+        # Throw error if we got more than 2 elements in parsed_command (meaning we got to many arguments)
+        if len(parsed_command) > 2:
+            print("YOO ERROR: dawg, too many arguments in the command fam.");
+
+        # Do something here for unrecognized commands too.
+
 
 
 
