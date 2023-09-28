@@ -26,7 +26,7 @@ class FTServer(object):
     def run(self):
         """
 
-
+        Currently laying out what I want to do with program.
 
         :return: The program exit code.
         """
@@ -35,18 +35,27 @@ class FTServer(object):
         self.comm_inf.initialize_server(self.server_source_port);
         self.comm_inf.establish_server_connection();
 
-        # Waiting to receive a command from the client...
-        client_comm = self.comm_inf.receive_command();
-        print(client_comm);
+        # Wait to receive a command from the client
+        client_command = self.comm_inf.receive_command();
+
+        # Parse command into an array, if more than 2 args throw error and todo: repeat loop?
+        parsed_command = [];
+
+        # Decode the array and execute the request as applicable
+
 
 
 
     # EXAMPLE METHOD
     def parse_command(self, in_command):
-        """ Function receives in a raw client command. Parses it, and
-        TODO: THIS PART NOT DECIDED YET. how we notify the server this is what is wanted.
+        """ Function receives in a raw client command. Parses it, and returns
+        the parsed words in an array if it does not violate conditions (2 elements or less).
 
-        Do we wanna have the commands get handled and executed from here? If so, might need to rename function"""
+        If parsed more than 2 elements, returns nothing to indicate error.
+
+        Args:
+            <in_command : string> : The raw string that contains the command sent by the client.
+        """
 
         # Use a delimiter to parse command
         parsed_command = in_command.split(',');
@@ -54,10 +63,21 @@ class FTServer(object):
         # Throw error if we got more than 2 elements in parsed_command (meaning we got to many arguments)
         if len(parsed_command) > 2:
             print("YOO ERROR: dawg, too many arguments in the command fam.");
+            # Return empty string...
 
         # Do something here for unrecognized commands too.
 
 
+    def decode_and_execute(self, parsed_command):
+        """ Function receives an array that contains the parsed client's command.
+        Depending on what was inputted, decode and execute the command according to the lab instructions.
+        If parsed_command was something unrecognized, throw error and todo figure out how this is handled
+
+        Args:
+            <parsed_command : [string]> : An array of strings of the parsed command that satisfies the conditions.
+        """
+
+        # Decode the parsed command, check for anything unrecognized.
 
 
 if __name__ == "__main__":

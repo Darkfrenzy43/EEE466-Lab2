@@ -29,8 +29,11 @@ class FTClient(object):
         # Upon initialization, connect client to the server
         self.comm_inf.initialize_client(self.server_address[0], self.server_address[1]);
 
-        # Getting user input (don't clean for now)
-        user_input = input("\nType in a command to send to server: \n> ");
+
+        # Getting user input (stripped of whitespace)
+        user_input = input("\nType in a command to send to server: \n> ").strip();
+
+        # Send user input to server
         self.comm_inf.send_command(user_input);
 
 
