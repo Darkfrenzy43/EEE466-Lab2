@@ -67,7 +67,15 @@ class FTServer(object):
     def run(self):
         """
 
-        Currently laying out what I want to do with program.
+        Upon initialization, wait to receive a connection from a client.
+        Once received, executes main while loop.
+
+        Contains main while loop of server:
+            1. Waits to receive a command from user.
+            2. Receives and decodes command, checking for bad input errors
+            3. Notifies the client if sent command was acknowledged, or an error occurred.
+            4. Server executes according to the received client command. If an error was sent,
+                restarts main loop and waits for another response.
 
         :return: The program exit code.
         """
@@ -96,80 +104,123 @@ class FTServer(object):
                 self.comm_inf.send_command("TOO MANY ARGS");
                 continue;
 
-
             # Decode the array and handle decoding errors accordingly (refer Notes 1, 4, 5, 6).
             # If error, notify client and restart main server loop.
-            # todo: make a note on program structure - why we are not putting the code below in a function
-            # (because the end results of each case are not all the same - quitting and shit)
             server_state = self.decode(parsed_command);
             match server_state:
 
-                case ServerState.UNRECOG_COMM:
-                    print("SERVER SIDE ERROR: The inputted command is unrecognized. Try again.");
-                    self.comm_inf.send_command("UNRECOG COMM");
-                    continue;
-
-                case ServerState.NONEXIST_FILE:
-                    print("SERVER SIDE ERROR: The inputted file does not exist in the "
-                          "server's database. Try again.");
-                    self.comm_inf.send_command("NONEXIST FILE");
-                    continue;
-
+                # If the client had sent a "get" request...
                 case ServerState.GET_COMM:
-
-                    self.comm_inf.send_command("GET ACK");
-
-                    # Once get request acknowledged, send the file
                     file_name = parsed_command[1];
-                    self.comm_inf.send_file("Server\\Send\\" + file_name);
-                    continue;
+                    self.execute_get(file_name);
 
+                # If the client had sent a "put" request...
                 case ServerState.PUT_COMM:
+                    file_name = parsed_command[1];
+                    self.execute_put(file_name);
 
-                    # First, send acknowledgement
-                    self.comm_inf.send_command("PUT ACK");
-
-                    # Next, wait for client response as they check if the given file exists in their database.
-                    client_response = self.comm_inf.receive_command();
-                    if client_response == "ACK":
-
-                        # Create var for the file path destination
-                        file_name = parsed_command[1];
-                        server_file_path = "Server\\Receive\\" + file_name;
-
-                        # Receive the file
-                        self.comm_inf.receive_file(server_file_path);
-
-                        # Verify if the file is now in the server database since pycharm doesn't auto update
-                        if os.path.exists(server_file_path):
-                            print("SERVER STATUS: file sent by client fully received in server database.");
-                        else:
-                            print("SERVER SIDE ERROR: File sent by client failed to be placed in server database.");
-
-                    elif client_response == "ERROR":
-                        print("SERVER SIDE ERROR: The file to receive from client does not exist in client database."
-                              "Try again.");
-                        continue;
-
-
-                case ServerState.NO_FILE:
-                    print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");
-                    self.comm_inf.send_command("NO FILE");
-                    continue;
-
-
+                # If the client had sent a "quit" request...
                 case ServerState.QUIT_COMM:
-                    print("SERVER STATUS: Received quit request. Terminating server execution...")
-                    self.comm_inf.send_command("QUIT ACK");
-                    self.comm_inf.close_connection();
+                    self.execute_quit();
                     break;
 
-                case ServerState.INVALID_QUIT:
-                    print("SERVER SIDE ERROR: The quit command was sent with extra arguments. Try again.");
-                    self.comm_inf.send_command("QUIT INVALID");
-                    continue;
+                # If nothing else matches, means an error occurred.
+                case other:
+                    self.handle_server_error(server_state);
 
 
+    def execute_get(self, in_file_name):
+        """ This function was created to make the main loop code cleaner.
+        This function is responsible for the facilitation of the "get" command requested by the client.
+        The end result is the server sending the client requested file.
+
+        Args:
+            <in_file_name : String> : This is the name of the requested file in the server's database.
+        """
+
+        # Notify the client that server acknowledged get request
+        self.comm_inf.send_command("GET ACK");
+
+        # Once get request acknowledged, send the file
+        self.comm_inf.send_file("Server\\Send\\" + in_file_name);
+
+
+    def execute_put(self, in_file_name):
+        """ This function was created to make the main loop code cleaner.
+        This function is responsible for the facilitation of the "put" command requested by the client.
+        The end result is the server receiving a file from the client and placing it in the server database.
+
+        Args:
+            <in_file_name : String> : The name of the file to be received from the client.
+        """
+
+        # First, send acknowledgement
+        self.comm_inf.send_command("PUT ACK");
+
+        # Next, wait for client response as they check if the given file exists in their database.
+        client_response = self.comm_inf.receive_command();
+
+        # If the client does have the file...
+        if client_response == "ACK":
+
+            # Create var for the file path destination
+            server_file_path = "Server\\Receive\\" + in_file_name;
+
+            # Receive the file
+            self.comm_inf.receive_file(server_file_path);
+
+            # Verify if the file is now in the server database since pycharm doesn't auto update
+            if os.path.exists(server_file_path):
+                print("SERVER STATUS: file sent by client fully received in server database.");
+            else:
+                print("SERVER SIDE ERROR: File sent by client failed to be placed in server database.");
+
+        # If the client did not have the file... throw error
+        elif client_response == "ERROR":
+            print("SERVER SIDE ERROR: The file to receive from client does not exist in client database. "
+                  "Try again.");
+
+    def execute_quit(self):
+        """ This function as created to make the main loop code cleaner.
+        Function simply prints status message, acknowledges client quit request, and closes connection. """
+
+        print("SERVER STATUS: Received quit request. Terminating server execution...")
+        self.comm_inf.send_command("QUIT ACK");
+        self.comm_inf.close_connection();
+
+
+    def handle_server_error(self, server_error_state):
+        """ Function was created to make the main loop code appear cleaner, due to the similar behaviour of these cases.
+        Depending on the error, function prints out the appropriate error msg on the server side, then notifies the
+        client of the error with the applicable "error response".
+
+        "UNRECOG COMM"  --> client sent an unrecognizable command to server.
+        "NONEXIST FILE" --> client has requested from the server a non-existent file in the latter's database.
+        "NO FILE" --> client had sent a put/get request, but without specifying a file name.
+        "QUIT INVALID" --> client had sent the server arguments with the quit command. Server refused.
+
+        Args:
+            <server_error_state : ServerState> : The state the server is in that reflects the error that had occurred.
+        """
+
+        match server_error_state:
+
+            case ServerState.NO_FILE:
+                print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");
+                self.comm_inf.send_command("NO FILE");
+
+            case ServerState.UNRECOG_COMM:
+                print("SERVER SIDE ERROR: The inputted command is unrecognized. Try again.");
+                self.comm_inf.send_command("UNRECOG COMM");
+
+            case ServerState.NONEXIST_FILE:
+                print("SERVER SIDE ERROR: The inputted file does not exist in the "
+                      "server's database. Try again.");
+                self.comm_inf.send_command("NONEXIST FILE");
+
+            case ServerState.INVALID_QUIT:
+                print("SERVER SIDE ERROR: The quit command was sent with extra arguments. Try again.");
+                self.comm_inf.send_command("QUIT INVALID");
 
 
     def parse_command(self, in_command):

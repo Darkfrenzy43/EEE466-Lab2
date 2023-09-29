@@ -34,8 +34,15 @@ class FTClient(object):
     def run(self):
         """
 
-        Upon initialization, connect to server.
-        Prompt user for input to send as commands to server.
+        Upon initialization, connects to server.
+
+        Once connected, executes main while loop:
+            1. Waits for user input from user.
+            2. Sends the user input as a command to the server.
+            3. Waits for a server response (acknowledgement or a reply indicating error)
+            4. If error reply received, notifies user of error.
+            5. If acknowledgement received for a command, execute command accordingly.
+
 
         :return: The program exit code.
         """
@@ -54,89 +61,83 @@ class FTClient(object):
             # Send user input to server
             self.comm_inf.send_command(user_input);
 
-
-
-            # I think we're going to need to capture the input and clean it up on our side too.
-
-
-
             # Wait for a server response, decode received msg accordingly:
-            # "TOO MANY ARGS" --> client sent too many args to the server.
-            # "UNRECOG COMM"  --> client sent an unrecognizable command to server.
-            # "NONEXIST PATH" --> client sent a non-existent file path to server.
+            # "QUIT ACK" --> server acknowledges the quit command that was sent. Prep client to quit as well.
             # "PUT ACK" --> server acknowledges the put command it was sent. Prep client to send file.
             # "GET ACK" --> server acknowledges the get command it was sent. Prep client to receive file.
-            # "NO PATH" --> client had sent a put/get request, but without specifying a file path.
-            # "QUIT ACK" --> server acknowledges the quit command that was sent. Prep client to quit as well.
+            # -------------------- CLIENT SIDE ERRORS (handled in separate function) ---------------------
+            # "TOO MANY ARGS" --> client sent too many args to the server.
+            # "UNRECOG COMM"  --> client sent an unrecognizable command to server.
+            # "NONEXIST FILE" --> client has requested from the server a non-existent file in the latter's database.
+            # "NO FILE" --> client had sent a put/get request, but without specifying a file name.
             # "QUIT INVALID" --> client had sent the server arguments with the quit command. Server refused.
             server_response = self.comm_inf.receive_command();
             match server_response:
-
-                case "TOO MANY ARGS":
-                    print(f"CLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
-                    continue;
-
-                case "UNRECOG COMM":
-                    print(f"CLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
-                    continue;
-
-                case "NONEXIST FILE":
-                    print(f"CLIENT SIDE ERROR: Requested file does not exist in "
-                          f"server database. Verify and try again.");
-                    continue;
 
                 case "GET ACK":
 
                     # Parse the command on client's side to get the file name sent to carry out put requests
                     parsed_command = self.parse_command(user_input);
                     file_name = parsed_command[1];
-                    client_file_path = "Client\\Receive\\" + file_name;
-
-                    # Receive the sent file and place in Client\Receive\ directory
-                    self.comm_inf.receive_file(client_file_path);
-
-                    # Verify here if client received the file (refer to Notes 1)
-                    if os.path.exists(client_file_path):
-                        print("CLIENT STATUS: Requested file confirmed received in client database.");
-                    else:
-                        print("CLIENT SIDE ERROR: Requested file failed to be placed in client database.");
+                    self.execute_get(file_name);
 
                 case "PUT ACK":
 
                     # Parse the command on client's side to get the file name sent to carry out put requests
                     parsed_command = self.parse_command(user_input);
                     file_name = parsed_command[1];
-                    client_file_path = "Client\\Send\\" + file_name;
-
-                    # Check if the given file exists in client database.
-                    # If so, send ACK ,then file, otherwise, send ERROR.
-                    if os.path.exists(client_file_path):
-                        print("CLIENT STATUS: File to send exists in client database. Sending...");
-                        self.comm_inf.send_command("ACK");
-                        self.comm_inf.send_file(client_file_path);
-                    else:
-                        print("CLIENT SIDE ERROR: File to send does not exist in client database. Verify file name.");
-                        self.comm_inf.send_command("ERROR");
-                        continue;
-
-                case "NO FILE":
-                    print("CLIENT SIDE ERROR: Last command was sent without a file path. Ensure to include one.");
-                    continue;
+                    self.execute_put(file_name);
 
                 case "QUIT ACK":
                     print("CLIENT STATUS: Server acknowledged quit request. Terminating client execution...");
                     break;
 
-                case "QUIT INVALID":
-                    print("CLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, "
-                          "send only <quit>.");
+                case other:
+
+                    # If nothing else matches, means error was returned. Print error msg accordingly.
+                    self.print_client_error(server_response);
 
 
+    def execute_get(self, in_file_name):
+        """ Function was created to make the main loop code cleaner.
+        The end state of this function is the client receiving a requested file from the server.
+
+        Args:
+            <in_file_name : String> : The name of the file being requested by the client from the server."""
+
+        # Create the path variable for clarity
+        client_file_path = "Client\\Receive\\" + in_file_name;
+
+        # Receive the requested file and place in Client\Receive\ directory
+        self.comm_inf.receive_file(client_file_path);
+
+        # Verify here if client received the file (refer to Notes 1)
+        if os.path.exists(client_file_path):
+            print("CLIENT STATUS: Requested file confirmed received in client database.");
+        else:
+            print("CLIENT SIDE ERROR: Requested file failed to be placed in client database.");
 
 
-    # EXAMPLE METHOD - lol do we even need this
-    def send_cmd(self, command: str, param: str = ""):
-        pass
+    def execute_put(self, in_file_name):
+        """ Function was created to make the main loop code cleaner.
+        The end state of this function is the client sending the server a specified file.
+        If the specified file does not exist in the client database, the error is handled appropriately.
+
+        Args:
+            <in_file_name : String> : The name of the file the user intends to send to the server."""
+
+        # Create the path variable for clarity
+        client_file_path = "Client\\Send\\" + in_file_name;
+
+        # Check if the given file exists in client database.
+        # If so, send ACK, then file, otherwise, send ERROR.
+        if os.path.exists(client_file_path):
+            print("CLIENT STATUS: File to send exists in client database. Sending...");
+            self.comm_inf.send_command("ACK");
+            self.comm_inf.send_file(client_file_path);
+        else:
+            print("CLIENT SIDE ERROR: File to send does not exist in client database. Verify file name.");
+            self.comm_inf.send_command("ERROR");
 
 
     def parse_command(self, in_command):
@@ -158,6 +159,40 @@ class FTClient(object):
             return [];
         else:
             return parsed_command;
+
+    def print_client_error(self, server_error_response):
+        """ This function was just created to clean up the main loop code, due to the similar behaviour of these cases.
+        The function prints out the appropriate error msg depending on the
+        error the server had returned to the client.
+
+        "TOO MANY ARGS" --> client sent too many args to the server.
+        "UNRECOG COMM"  --> client sent an unrecognizable command to server.
+        "NONEXIST FILE" --> client has requested from the server a non-existent file in the latter's database.
+        "NO FILE" --> client had sent a put/get request, but without specifying a file name.
+        "QUIT INVALID" --> client had sent the server arguments with the quit command. Server refused.
+
+        Args:
+            <server_error_response : string> : The error response that the server had replied with. """
+
+        match server_error_response:
+
+            case "QUIT INVALID":
+                print("CLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, "
+                "send only <quit>.");
+
+            case "TOO MANY ARGS":
+                print(f"CLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
+
+            case "UNRECOG COMM":
+                print(f"CLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
+
+            case "NONEXIST FILE":
+                print(f"CLIENT SIDE ERROR: Requested file does not exist in "
+                      f"server database. Verify and try again.");
+
+            case "NO FILE":
+                print("CLIENT SIDE ERROR: Last command was sent without a file. Ensure to include one.");
+
 
 
 if __name__ == "__main__":
