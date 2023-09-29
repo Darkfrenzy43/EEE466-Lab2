@@ -23,13 +23,33 @@ from EEE466Baseline.TCPFileTransfer import TCPFileTransfer as CommunicationInter
         method body into static" suggestions. We could, however I'm choosing not to in order to not introduce
         another factor of static class methods into the code. It wouldn't exactly hurt having these methods in
         question still remain as class methods. 
+        
+        4. Just decided that we're adding a few more enumerated server states: PUT_COMM and GET_COMM. I decided
+        that to make the program flow linear, we're not going to call the sending file and receiving file commands
+        in the decode_and_execute() function (in fact, we're renaming that to simply decode). The function will
+        simply return the server state the client is requesting. If the client wants to put a file on the server, 
+        the function returns PUT_COMM. If the client wants to get a file, the function returns GET_COMM. Remember,
+        at this point all the bad input errors are handled as well. Also, adding a NO_PATH state that is returned
+        when the client sends a put or get request, but no "file path element" was put in the command as well. 
+        
+        5. Adding one more thing. It's going to be a design choice where if the client sends more than one element when
+        the server receives a "quit" command, then it will also throw an invalid quit error. This gets handled just
+        like the rest of the bad input errors. 
+        
+        6. Just so it wasn't clear in the code flow, the server sends an acknowledgement to the user whenever it 
+        it receives a valid command, letting the user know that it processed it all good and well. 
 
 """
 
 # Making an enum class that tracks errors
-class ServerErrors(Enum):
+class ServerState(Enum):
     UNRECOG_COMM = 0;
     NONEXIST_PATH = 1;
+    PUT_COMM = 2;
+    GET_COMM = 3;
+    NO_PATH = 4;
+    INVALID_QUIT = 5;
+    QUIT_COMM = 6;
 
 
 class FTServer(object):
@@ -62,7 +82,7 @@ class FTServer(object):
             # Wait to receive a command from the client
             print("\nSERVER: Waiting to receive command from client... ", end = "");
             client_command = self.comm_inf.receive_command();
-            print(" command received.");
+            print(f" command received: [{client_command}]");
 
             # Parse command into an array of strings.
             parsed_command = self.parse_command(client_command);
@@ -77,21 +97,51 @@ class FTServer(object):
                 continue;
 
 
-            # Decode the array and handle decoding errors accordingly (refer Notes 1).
+            # Decode the array and handle decoding errors accordingly (refer Notes 1, 4, 5, 6).
             # If error, notify client and restart main server loop.
-            result = self.decode_and_execute(parsed_command);
-            if result == ServerErrors.UNRECOG_COMM:
-                print("SERVER SIDE ERROR: The inputted command is unrecognized. Try again.");
-                self.comm_inf.send_command("UNRECOG COMM");
-                continue;
+            # todo: make a note on program structure - why we are not putting the code below in a function
+            # (because the end results of each case are not all the same - quitting and shit)
+            server_state = self.decode(parsed_command);
+            match server_state:
 
-            elif result == ServerErrors.NONEXIST_PATH:
-                print("SERVER SIDE ERROR: The inputted file path does not exist. Try again.");
-                self.comm_inf.send_command("NONEXIST PATH");
-                continue;
+                case ServerState.UNRECOG_COMM:
+                    print("SERVER SIDE ERROR: The inputted command is unrecognized. Try again.");
+                    self.comm_inf.send_command("UNRECOG COMM");
+                    continue;
+
+                case ServerState.NONEXIST_PATH:
+                    print("SERVER SIDE ERROR: The inputted file path does not exist. Try again.");
+                    self.comm_inf.send_command("NONEXIST PATH");
+                    continue;
+
+                case ServerState.GET_COMM:
+
+                    pass;
+
+                case ServerState.PUT_COMM:
+
+                    pass;
+
+                case ServerState.NO_PATH:
+                    print("SERVER SIDE ERROR: The command was sent without a file path. Try again.");
+                    self.comm_inf.send_command("NO PATH");
+                    continue;
 
 
-    # EXAMPLE METHOD
+                case ServerState.QUIT_COMM:
+                    print("SERVER STATUS: Received quit request. Terminating server execution...")
+                    self.comm_inf.send_command("QUIT ACK");
+                    self.comm_inf.close_connection();
+                    break;
+
+                case ServerState.INVALID_QUIT:
+                    print("SERVER SIDE ERROR: The quit command was sent with extra arguments. Try again.");
+                    self.comm_inf.send_command("QUIT INVALID");
+                    continue;
+
+
+
+
     def parse_command(self, in_command):
         """ Function receives in a raw client command. Parses it, and returns
         the parsed words in an array if it does not violate conditions (2 elements or less).
@@ -113,33 +163,55 @@ class FTServer(object):
             return parsed_command;
 
 
-    def decode_and_execute(self, parsed_command):
+    def decode(self, parsed_command):
         """ Function receives an array that contains the parsed client's command.
-        Depending on what was inputted, decode and execute the command according to the lab instructions.
-        If parsed_command was something unrecognized (command unrecognized or file_path doesn't exist), return true
-        indicating that an error occurred.
+        Depending on what was inputted, decodes and returns the "server state" to tell the server what to do next.
+
+        If parsed_command was something unrecognized (command unrecognized or file_path doesn't exist), return the error
 
         Args:
             <parsed_command : [string]> : An array of strings of the parsed command that satisfies the conditions.
-            Returns: returns enum value UNRECOG_COMM when command unrecognized, returns enum value NONEXIST_PATH
-            when the file path does not exist.
+            Returns:
+                Returns enum value UNRECOG_COMM when command unrecognized.
+                Returns enum value NONEXIST_PATH when the file path does not exist.
+                Returns enum value GET_COMM when it decodes a "get" command from the client.
+                Returns enum value PUT_COMM when it decodes a "put" command from the client.
+                Returns enum value NO_PATH when it decodes a "get/put" command, but no file path element was included.
+                Returns enum value QUIT_COMM when it decodes a "quit" command from the client.
+                Returns enum value INVALID_QUIT when it decodes a "quit" command, but there are extra arguments added.
         """
 
-        # Unpack parsed_command (since it looks cleaner)
-        this_command, this_path = parsed_command[0], parsed_command[1];
+        # Unpack the command portion (path element parsed_command[1] may not exist if 'quit' command sent)
+        this_command = parsed_command[0];
 
         # Making array of valid commands here
-        command_list = ['put', 'get'];
+        command_list = ['put', 'get', 'quit'];
 
-        # Check if command is valid and if the path exists. Return error status accordingly to main.
+        # First check if command is valid - return appropriate server status if so
         if this_command not in command_list:
-            return ServerErrors.UNRECOG_COMM;
+            return ServerState.UNRECOG_COMM;
 
-        if not os.path.exists(this_path):
-            return ServerErrors.NONEXIST_PATH;
+        # Check if command was quit and ensure is valid if so
+        if this_command == 'quit':
+            if len(parsed_command) > 1:
+                return ServerState.INVALID_QUIT;
+            else:
+                return ServerState.QUIT_COMM;
 
-        # Do things here depending on the job sent job...
-        print("\nCall functions that do stuff here...");
+        # For non-quit commands, first check if a file path element was included in command
+        if len(parsed_command) == 1:
+            return ServerState.NO_PATH;
+
+        # Then check if the file path exists for non-quit commands
+        if not os.path.exists(parsed_command[1]):
+            return ServerState.NONEXIST_PATH;
+
+        # Here, return the appropriate server state depending on command (refer to Notes 4, 5)
+        if this_command == 'put':
+            return ServerState.PUT_COMM;
+        elif this_command == 'get':
+            return ServerState.GET_COMM;
+
 
 if __name__ == "__main__":
     # Your program must be able to be run from the command line/IDE (using the line below).

@@ -44,18 +44,43 @@ class FTClient(object):
             # "TOO MANY ARGS" --> client sent too many args to the server.
             # "UNRECOG COMM"  --> client sent an unrecognizable command to server.
             # "NONEXIST PATH" --> client sent a non-existent file path to server.
-            server_resp = self.comm_inf.receive_command();
-            if server_resp == "TOO MANY ARGS":
-                print(f"\nCLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
-                continue;
-            elif server_resp == "UNRECOG COMM":
-                print(f"\nCLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
-                continue;
-            elif server_resp == "NONEXIST PATH":
-                print(f"\nCLIENT SIDE ERROR: Last command had a nonexistent file path. Verify and try again.");
-                continue;
+            # "PUT ACK" --> server acknowledges the put command it was sent.
+            # "GET ACK" --> server acknowledges the get command it was sent.
+            # "NO PATH" --> client had sent a put/get request, but without specifying a file path.
+            # "QUIT ACK" --> server acknowledges the quit command it was sent.
+            # "QUIT INVALID" --> client had sent the server arguments with the quit command. Server refused.
+            server_response = self.comm_inf.receive_command();
+            match server_response:
 
+                case "TOO MANY ARGS":
+                    print(f"\nCLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
+                    continue;
 
+                case "UNRECOG COMM":
+                    print(f"\nCLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
+                    continue;
+
+                case "NONEXIST PATH":
+                    print(f"\nCLIENT SIDE ERROR: Last command had a nonexistent file path. Verify and try again.");
+                    continue;
+
+                case "PUT ACK":
+                    pass;
+
+                case "GET ACK":
+                    pass;
+
+                case "NO PATH":
+                    print("\nCLIENT SIDE ERROR: Last command was sent without a file path. Ensure to include one.");
+                    continue;
+
+                case "QUIT ACK":
+                    print("CLIENT STATUS: Server acknowledged quit request. Terminating client execution...");
+                    break;
+
+                case "QUIT INVALID":
+                    print("\nCLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, "
+                          "send only <quit>.");
 
 
 
