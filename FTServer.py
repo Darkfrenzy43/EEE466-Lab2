@@ -107,26 +107,25 @@ class FTServer(object):
             # Decode the array and handle decoding errors accordingly (refer Notes 1, 4, 5, 6).
             # If error, notify client and restart main server loop.
             server_state = self.decode(parsed_command);
-            match server_state:
 
-                # If the client had sent a "get" request...
-                case ServerState.GET_COMM:
-                    file_name = parsed_command[1];
-                    self.execute_get(file_name);
+            # If the client had sent a "get" request...
+            if server_state == ServerState.GET_COMM:
+                file_name = parsed_command[1];
+                self.execute_get(file_name);
 
-                # If the client had sent a "put" request...
-                case ServerState.PUT_COMM:
-                    file_name = parsed_command[1];
-                    self.execute_put(file_name);
+            # If the client had sent a "put" request...
+            elif server_state == ServerState.PUT_COMM:
+                file_name = parsed_command[1];
+                self.execute_put(file_name);
 
-                # If the client had sent a "quit" request...
-                case ServerState.QUIT_COMM:
-                    self.execute_quit();
-                    break;
+            # If the client had sent a "quit" request...
+            elif server_state == ServerState.QUIT_COMM:
+                self.execute_quit();
+                break;
 
-                # If nothing else matches, means an error occurred.
-                case other:
-                    self.handle_server_error(server_state);
+            # If nothing else matches, means an error occurred.
+            else:
+                self.handle_server_error(server_state);
 
 
     def execute_get(self, in_file_name):
@@ -203,24 +202,23 @@ class FTServer(object):
             <server_error_state : ServerState> : The state the server is in that reflects the error that had occurred.
         """
 
-        match server_error_state:
 
-            case ServerState.NO_FILE:
-                print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");
-                self.comm_inf.send_command("NO FILE");
+        if server_error_state == ServerState.NO_FILE:
+            print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");
+            self.comm_inf.send_command("NO FILE");
 
-            case ServerState.UNRECOG_COMM:
-                print("SERVER SIDE ERROR: The inputted command is unrecognized. Try again.");
-                self.comm_inf.send_command("UNRECOG COMM");
+        elif server_error_state == ServerState.UNRECOG_COMM:
+            print("SERVER SIDE ERROR: The inputted command is unrecognized. Try again.");
+            self.comm_inf.send_command("UNRECOG COMM");
 
-            case ServerState.NONEXIST_FILE:
-                print("SERVER SIDE ERROR: The inputted file does not exist in the "
-                      "server's database. Try again.");
-                self.comm_inf.send_command("NONEXIST FILE");
+        elif server_error_state == ServerState.NONEXIST_FILE:
+            print("SERVER SIDE ERROR: The inputted file does not exist in the "
+                  "server's database. Try again.");
+            self.comm_inf.send_command("NONEXIST FILE");
 
-            case ServerState.INVALID_QUIT:
-                print("SERVER SIDE ERROR: The quit command was sent with extra arguments. Try again.");
-                self.comm_inf.send_command("QUIT INVALID");
+        elif server_error_state == ServerState.INVALID_QUIT:
+            print("SERVER SIDE ERROR: The quit command was sent with extra arguments. Try again.");
+            self.comm_inf.send_command("QUIT INVALID");
 
 
     def parse_command(self, in_command):

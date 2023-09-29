@@ -73,36 +73,37 @@ class FTClient(object):
 
             # Wait for a server response, decode received msg accordingly (refer to Notes 2)
             server_response = self.comm_inf.receive_command();
-            match server_response:
+            if server_response == "GET ACK":
 
-                case "GET ACK":
+                # Getting the file name from command
+                parsed_command = self.parse_command(user_input);
+                file_name = parsed_command[1];
 
-                    # Getting the file name from command
-                    parsed_command = self.parse_command(user_input);
-                    file_name = parsed_command[1];
+                # Execute client side of command
+                self.execute_get(file_name);
 
-                    # Execute client side of command
-                    self.execute_get(file_name);
+            elif server_response == "PUT ACK":
 
-                case "PUT ACK":
+                # Getting the file name from command
+                parsed_command = self.parse_command(user_input);
+                file_name = parsed_command[1];
 
-                    # Getting the file name from command
-                    parsed_command = self.parse_command(user_input);
-                    file_name = parsed_command[1];
+                # Execute client side of command
+                self.execute_put(file_name);
 
-                    # Execute client side of command
-                    self.execute_put(file_name);
+            elif server_response == "QUIT ACK":
 
-                case "QUIT ACK":
+                # Break main while loop.
+                print("CLIENT STATUS: Server acknowledged quit request. Terminating client execution...");
+                break;
 
-                    # Break main while loop.
-                    print("CLIENT STATUS: Server acknowledged quit request. Terminating client execution...");
-                    break;
+            else:
 
-                case other:
+                # If nothing else matches, means error was returned. Print error msg accordingly.
+                self.print_client_error(server_response);
 
-                    # If nothing else matches, means error was returned. Print error msg accordingly.
-                    self.print_client_error(server_response);
+
+
 
 
     def execute_get(self, in_file_name):
@@ -181,24 +182,22 @@ class FTClient(object):
         Args:
             <server_error_response : string> : The error response that the server had replied with. """
 
-        match server_error_response:
+        if server_error_response == "QUIT INVALID":
 
-            case "QUIT INVALID":
-                print("CLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, "
-                "send only <quit>.");
+            print("CLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, send only <quit>.");
 
-            case "TOO MANY ARGS":
-                print(f"CLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
+        elif server_error_response == "TOO MANY ARGS":
+            print(f"CLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
 
-            case "UNRECOG COMM":
-                print(f"CLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
+        elif server_error_response == "UNRECOG COMM":
+            print(f"CLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
 
-            case "NONEXIST FILE":
-                print(f"CLIENT SIDE ERROR: Requested file does not exist in "
-                      f"server database. Verify and try again.");
+        elif server_error_response == "NONEXIST FILE":
+            print(f"CLIENT SIDE ERROR: Requested file does not exist in "
+                  f"server database. Verify and try again.");
 
-            case "NO FILE":
-                print("CLIENT SIDE ERROR: Last command was sent without a file. Ensure to include one.");
+        elif server_error_response == "NO FILE":
+            print("CLIENT SIDE ERROR: Last command was sent without a file. Ensure to include one.");
 
 
 
