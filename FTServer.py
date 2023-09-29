@@ -110,20 +110,47 @@ class FTServer(object):
                     continue;
 
                 case ServerState.NONEXIST_FILE:
-                    print("SERVER SIDE ERROR: The inputted file name does not exist in the "
+                    print("SERVER SIDE ERROR: The inputted file does not exist in the "
                           "server's database. Try again.");
                     self.comm_inf.send_command("NONEXIST FILE");
                     continue;
 
                 case ServerState.GET_COMM:
+
                     self.comm_inf.send_command("GET ACK");
+
+                    # Once get request acknowledged, send the file
                     file_name = parsed_command[1];
                     self.comm_inf.send_file("Server\\Send\\" + file_name);
                     continue;
 
                 case ServerState.PUT_COMM:
 
-                    pass;
+                    # First, send acknowledgement
+                    self.comm_inf.send_command("PUT ACK");
+
+                    # Next, wait for client response as they check if the given file exists in their database.
+                    client_response = self.comm_inf.receive_command();
+                    if client_response == "ACK":
+
+                        # Create var for the file path destination
+                        file_name = parsed_command[1];
+                        server_file_path = "Server\\Receive\\" + file_name;
+
+                        # Receive the file
+                        self.comm_inf.receive_file(server_file_path);
+
+                        # Verify if the file is now in the server database since pycharm doesn't auto update
+                        if os.path.exists(server_file_path):
+                            print("SERVER STATUS: file sent by client fully received in server database.");
+                        else:
+                            print("SERVER SIDE ERROR: File sent by client failed to be placed in server database.");
+
+                    elif client_response == "ERROR":
+                        print("SERVER SIDE ERROR: The file to receive from client does not exist in client database."
+                              "Try again.");
+                        continue;
+
 
                 case ServerState.NO_FILE:
                     print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");

@@ -73,21 +73,21 @@ class FTClient(object):
             match server_response:
 
                 case "TOO MANY ARGS":
-                    print(f"\nCLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
+                    print(f"CLIENT SIDE ERROR: Last command had too many arguments. Follow format <command,file_name>.");
                     continue;
 
                 case "UNRECOG COMM":
-                    print(f"\nCLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
+                    print(f"CLIENT SIDE ERROR: Last command sent unrecognized by server. Choose either <get> or <put>.");
                     continue;
 
                 case "NONEXIST FILE":
-                    print(f"\nCLIENT SIDE ERROR: Requested file does not exist in "
+                    print(f"CLIENT SIDE ERROR: Requested file does not exist in "
                           f"server database. Verify and try again.");
                     continue;
 
                 case "GET ACK":
 
-                    # Parse the command on client's side to get the file name sent to carry out get/put requests
+                    # Parse the command on client's side to get the file name sent to carry out put requests
                     parsed_command = self.parse_command(user_input);
                     file_name = parsed_command[1];
                     client_file_path = "Client\\Receive\\" + file_name;
@@ -101,12 +101,26 @@ class FTClient(object):
                     else:
                         print("CLIENT SIDE ERROR: Requested file failed to be placed in client database.");
 
-
                 case "PUT ACK":
-                    pass;
+
+                    # Parse the command on client's side to get the file name sent to carry out put requests
+                    parsed_command = self.parse_command(user_input);
+                    file_name = parsed_command[1];
+                    client_file_path = "Client\\Send\\" + file_name;
+
+                    # Check if the given file exists in client database.
+                    # If so, send ACK ,then file, otherwise, send ERROR.
+                    if os.path.exists(client_file_path):
+                        print("CLIENT STATUS: File to send exists in client database. Sending...");
+                        self.comm_inf.send_command("ACK");
+                        self.comm_inf.send_file(client_file_path);
+                    else:
+                        print("CLIENT SIDE ERROR: File to send does not exist in client database. Verify file name.");
+                        self.comm_inf.send_command("ERROR");
+                        continue;
 
                 case "NO FILE":
-                    print("\nCLIENT SIDE ERROR: Last command was sent without a file path. Ensure to include one.");
+                    print("CLIENT SIDE ERROR: Last command was sent without a file path. Ensure to include one.");
                     continue;
 
                 case "QUIT ACK":
@@ -114,7 +128,7 @@ class FTClient(object):
                     break;
 
                 case "QUIT INVALID":
-                    print("\nCLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, "
+                    print("CLIENT SIDE ERROR: Quit command was sent with an argument. If wish to quit, "
                           "send only <quit>.");
 
 
