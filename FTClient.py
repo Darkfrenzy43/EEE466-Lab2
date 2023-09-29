@@ -16,6 +16,16 @@ from EEE466Baseline.TCPFileTransfer import TCPFileTransfer as CommunicationInter
         Accordingly, to ensure that we really did receive the files, I do an extra check on the client side if
         we actually have the files in the Receive directory, even if pycharm hasn't updated to reflect accordingly. 
 
+        2. Below are the possible server responses:
+            "QUIT ACK" --> server acknowledges the quit command that was sent. Prep client to quit as well.
+            "PUT ACK" --> server acknowledges the put command it was sent. Prep client to send file.
+            "GET ACK" --> server acknowledges the get command it was sent. Prep client to receive file.
+            -------------------- CLIENT SIDE ERRORS (handled in separate function) ---------------------
+            "TOO MANY ARGS" --> client sent too many args to the server.
+            "UNRECOG COMM"  --> client sent an unrecognizable command to server.
+            "NONEXIST FILE" --> client has requested from the server a non-existent file in the latter's database.
+            "NO FILE" --> client had sent a put/get request, but without specifying a file name.
+            "QUIT INVALID" --> client had sent the server arguments with the quit command. Server refused.
 """
 
 
@@ -61,34 +71,31 @@ class FTClient(object):
             # Send user input to server
             self.comm_inf.send_command(user_input);
 
-            # Wait for a server response, decode received msg accordingly:
-            # "QUIT ACK" --> server acknowledges the quit command that was sent. Prep client to quit as well.
-            # "PUT ACK" --> server acknowledges the put command it was sent. Prep client to send file.
-            # "GET ACK" --> server acknowledges the get command it was sent. Prep client to receive file.
-            # -------------------- CLIENT SIDE ERRORS (handled in separate function) ---------------------
-            # "TOO MANY ARGS" --> client sent too many args to the server.
-            # "UNRECOG COMM"  --> client sent an unrecognizable command to server.
-            # "NONEXIST FILE" --> client has requested from the server a non-existent file in the latter's database.
-            # "NO FILE" --> client had sent a put/get request, but without specifying a file name.
-            # "QUIT INVALID" --> client had sent the server arguments with the quit command. Server refused.
+            # Wait for a server response, decode received msg accordingly (refer to Notes 2)
             server_response = self.comm_inf.receive_command();
             match server_response:
 
                 case "GET ACK":
 
-                    # Parse the command on client's side to get the file name sent to carry out put requests
+                    # Getting the file name from command
                     parsed_command = self.parse_command(user_input);
                     file_name = parsed_command[1];
+
+                    # Execute client side of command
                     self.execute_get(file_name);
 
                 case "PUT ACK":
 
-                    # Parse the command on client's side to get the file name sent to carry out put requests
+                    # Getting the file name from command
                     parsed_command = self.parse_command(user_input);
                     file_name = parsed_command[1];
+
+                    # Execute client side of command
                     self.execute_put(file_name);
 
                 case "QUIT ACK":
+
+                    # Break main while loop.
                     print("CLIENT STATUS: Server acknowledged quit request. Terminating client execution...");
                     break;
 
