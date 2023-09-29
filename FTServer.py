@@ -61,7 +61,7 @@ class FTServer(object):
     def __init__(self):
         self.comm_inf = CommunicationInterface()
 
-        # Hard code server port for now
+        # Hard code server port
         self.server_source_port = 9000;
 
     def run(self):
@@ -80,7 +80,7 @@ class FTServer(object):
         :return: The program exit code.
         """
 
-        # Upon initialization, open port 9000 on server and wait for connections from clients.
+        # Upon initialization, open port 9000 on server and wait for connection from client.
         self.comm_inf.initialize_server(self.server_source_port);
         self.comm_inf.establish_server_connection();
 
@@ -95,7 +95,7 @@ class FTServer(object):
             # Parse command into an array of strings.
             parsed_command = self.parse_command(client_command);
 
-            # Check if there was parsed_command empty - if so, means that
+            # Check if parsed_command is empty - if so, means that
             # client sent too many arguments. Re-prompt client.
             if len(parsed_command) == 0:
 
@@ -140,7 +140,7 @@ class FTServer(object):
         # Notify the client that server acknowledged get request
         self.comm_inf.send_command("GET ACK");
 
-        # Once get request acknowledged, send the file
+        # Once get request acknowledged by client, send the file
         self.comm_inf.send_file("Server\\Send\\" + in_file_name);
 
 
@@ -179,6 +179,7 @@ class FTServer(object):
             print("SERVER SIDE ERROR: The file to receive from client does not exist in client database. "
                   "Try again.");
 
+
     def execute_quit(self):
         """ This function as created to make the main loop code cleaner.
         Function simply prints status message, acknowledges client quit request, and closes connection. """
@@ -201,7 +202,6 @@ class FTServer(object):
         Args:
             <server_error_state : ServerState> : The state the server is in that reflects the error that had occurred.
         """
-
 
         if server_error_state == ServerState.NO_FILE:
             print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");
@@ -253,11 +253,11 @@ class FTServer(object):
             Returns:
                 Returns enum value UNRECOG_COMM when command unrecognized.
                 Returns enum value NONEXIST_PATH when the file path does not exist.
+                Returns enum value NO_PATH when it decodes a "get/put" command, but no file path element was included.
+                Returns enum value INVALID_QUIT when it decodes a "quit" command, but there are extra arguments added.
+                Returns enum value QUIT_COMM when it decodes a "quit" command from the client.
                 Returns enum value GET_COMM when it decodes a "get" command from the client.
                 Returns enum value PUT_COMM when it decodes a "put" command from the client.
-                Returns enum value NO_PATH when it decodes a "get/put" command, but no file path element was included.
-                Returns enum value QUIT_COMM when it decodes a "quit" command from the client.
-                Returns enum value INVALID_QUIT when it decodes a "quit" command, but there are extra arguments added.
         """
 
         # Unpack the command portion (path element parsed_command[1] may not exist if 'quit' command sent)
@@ -270,7 +270,7 @@ class FTServer(object):
         if this_command not in command_list:
             return ServerState.UNRECOG_COMM;
 
-        # Check if command was quit and ensure is valid if so
+        # Check if command was quit and ensure is valid if so (refer to Notes 5)
         if this_command == 'quit':
             if len(parsed_command) > 1:
                 return ServerState.INVALID_QUIT;
@@ -284,11 +284,10 @@ class FTServer(object):
         # Here, return the appropriate server state depending on command (refer to Notes 4, 5)
         if this_command == 'put':
             return ServerState.PUT_COMM;
-
         elif this_command == 'get':
 
-            # Check if the requested file
-            # If client sent get request, check if server has the file in Server\Send\
+            # Check if the requested file. If client sent get request,
+            # check if server has the file in Server\Send\
             parsed_path = parsed_command[1].split('\\');
             file_name = parsed_path[-1];
             if not os.path.exists("Server\\Send\\" + file_name):

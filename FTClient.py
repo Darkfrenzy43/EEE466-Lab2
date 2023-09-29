@@ -103,9 +103,6 @@ class FTClient(object):
                 self.print_client_error(server_response);
 
 
-
-
-
     def execute_get(self, in_file_name):
         """ Function was created to make the main loop code cleaner.
         The end state of this function is the client receiving a requested file from the server.

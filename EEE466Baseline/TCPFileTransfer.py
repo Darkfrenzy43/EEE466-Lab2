@@ -59,10 +59,10 @@ class TCPFileTransfer(CommunicationInterface):
         Class Attributes:
             <device_type> : Tracks what device the instantiated communication object is acting as (ie. client, server).
                 DEFAULTED TO DeviceTypes.TCPCLIENT UPON INSTANTIATION. 
-            <initial_socket : socket> : This is a socket object that is used by both client and server devices.
+            <initial_socket : socket> : Attribute used by both server and client.
                 A client uses it to connect to the server and for all its data transmission purposes.
                 A server uses it only once when first creating the socket object. Once a connection is received,
-                server objects use the socket object (returned by socket.accept()) stored in self.server_socket. 
+                server objects then uses the socket object (returned by socket.accept()) stored in self.server_socket.
             <server_socket : socket> : Attribute only used by server - stores the returned socket object 
                 by socket.accept() which the server uses for data transmission. 
             <client_addr : tuple> : Attribute only used by server - stores the TCP address of the client 
