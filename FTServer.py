@@ -29,8 +29,8 @@ from EEE466Baseline.TCPFileTransfer import TCPFileTransfer as CommunicationInter
         in the decode_and_execute() function (in fact, we're renaming that to simply decode). The function will
         simply return the server state the client is requesting. If the client wants to put a file on the server, 
         the function returns PUT_COMM. If the client wants to get a file, the function returns GET_COMM. Remember,
-        at this point all the bad input errors are handled as well. Also, adding a NO_PATH state that is returned
-        when the client sends a put or get request, but no "file path element" was put in the command as well. 
+        at this point all the bad input errors are handled as well. Also, adding a NO_FILE state that is returned
+        when the client sends a put or get request, but no "file name element" was put in the command as well. 
         
         5. Adding one more thing. It's going to be a design choice where if the client sends more than one element when
         the server receives a "quit" command, then it will also throw an invalid quit error. This gets handled just
@@ -44,10 +44,10 @@ from EEE466Baseline.TCPFileTransfer import TCPFileTransfer as CommunicationInter
 # Making an enum class that tracks errors
 class ServerState(Enum):
     UNRECOG_COMM = 0;
-    NONEXIST_PATH = 1;
+    NONEXIST_FILE = 1;
     PUT_COMM = 2;
     GET_COMM = 3;
-    NO_PATH = 4;
+    NO_FILE = 4;
     INVALID_QUIT = 5;
     QUIT_COMM = 6;
 
@@ -109,22 +109,25 @@ class FTServer(object):
                     self.comm_inf.send_command("UNRECOG COMM");
                     continue;
 
-                case ServerState.NONEXIST_PATH:
-                    print("SERVER SIDE ERROR: The inputted file path does not exist. Try again.");
-                    self.comm_inf.send_command("NONEXIST PATH");
+                case ServerState.NONEXIST_FILE:
+                    print("SERVER SIDE ERROR: The inputted file name does not exist in the "
+                          "server's database. Try again.");
+                    self.comm_inf.send_command("NONEXIST FILE");
                     continue;
 
                 case ServerState.GET_COMM:
-
-                    pass;
+                    self.comm_inf.send_command("GET ACK");
+                    file_name = parsed_command[1];
+                    self.comm_inf.send_file("Server\\Send\\" + file_name);
+                    continue;
 
                 case ServerState.PUT_COMM:
 
                     pass;
 
-                case ServerState.NO_PATH:
-                    print("SERVER SIDE ERROR: The command was sent without a file path. Try again.");
-                    self.comm_inf.send_command("NO PATH");
+                case ServerState.NO_FILE:
+                    print("SERVER SIDE ERROR: The command was sent without a file to transfer. Try again.");
+                    self.comm_inf.send_command("NO FILE");
                     continue;
 
 
@@ -198,18 +201,23 @@ class FTServer(object):
             else:
                 return ServerState.QUIT_COMM;
 
-        # For non-quit commands, first check if a file path element was included in command
-        if len(parsed_command) == 1:
-            return ServerState.NO_PATH;
-
-        # Then check if the file path exists for non-quit commands
-        if not os.path.exists(parsed_command[1]):
-            return ServerState.NONEXIST_PATH;
+        # For non-quit commands, first check if a file name element was included in command (or was empty)
+        if len(parsed_command) == 1 or parsed_command[1] == "":
+            return ServerState.NO_FILE;
 
         # Here, return the appropriate server state depending on command (refer to Notes 4, 5)
         if this_command == 'put':
             return ServerState.PUT_COMM;
+
         elif this_command == 'get':
+
+            # Check if the requested file
+            # If client sent get request, check if server has the file in Server\Send\
+            parsed_path = parsed_command[1].split('\\');
+            file_name = parsed_path[-1];
+            if not os.path.exists("Server\\Send\\" + file_name):
+                return ServerState.NONEXIST_FILE;
+
             return ServerState.GET_COMM;
 
 

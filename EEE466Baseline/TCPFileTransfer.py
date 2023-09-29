@@ -100,7 +100,7 @@ class TCPFileTransfer(CommunicationInterface):
         self.initial_socket.listen(0); # <-- Unlimited retries for connection
 
         # Print statement for status
-        print(f"{self.device_type} STATUS: Server bounded and listening on port {self.server_addr[1]}...")
+        print(f"{self.device_type} COMM STATUS: Server bounded and listening on port {self.server_addr[1]}...")
 
 
     def establish_server_connection(self):
@@ -121,7 +121,7 @@ class TCPFileTransfer(CommunicationInterface):
         self.server_socket, self.client_addr = self.initial_socket.accept();
 
         # Print status
-        print(f"{self.device_type} STATUS: Server received connection from client at {self.client_addr}.");
+        print(f"{self.device_type} COMM STATUS: Server received connection from client at {self.client_addr}.");
 
 
     def initialize_client(self, address, destination_port):
@@ -146,7 +146,7 @@ class TCPFileTransfer(CommunicationInterface):
         self.initial_socket.connect(self.server_addr);
 
         # Print status
-        print(f"{self.device_type} STATUS: successfully connected to server at {self.server_addr}.")
+        print(f"{self.device_type} COMM STATUS: successfully connected to server at {self.server_addr}.")
 
 
     def send_file(self, file_path):
@@ -163,7 +163,7 @@ class TCPFileTransfer(CommunicationInterface):
         # Print statement for status
         path_separated = file_path.split('\\');
         file_name = path_separated[-1];
-        print(f"\n{self.device_type} STATUS: Sending file <{file_name}> in directory [{file_path[:-len(file_name)]}] "
+        print(f"\n{self.device_type} COMM STATUS: Sending file <{file_name}> in directory [{file_path[:-len(file_name)]}] "
               f"to other device...")
 
         # Determine the socket to use to send, depending on the type of sending device (Default to client)
@@ -186,7 +186,7 @@ class TCPFileTransfer(CommunicationInterface):
             self.slice_and_send(sending_socket, file_data);
 
         # Print status
-        print(f"{self.device_type} STATUS: File <{file_name}> finished sending.")
+        print(f"{self.device_type} COMM STATUS: File <{file_name}> finished sending.")
 
 
 
@@ -206,7 +206,7 @@ class TCPFileTransfer(CommunicationInterface):
         # Printing the status
         path_separated = file_path.split('\\');
         file_name = path_separated[-1];
-        print(f"\n{self.device_type} STATUS: Receiving file and placing it in directory "
+        print(f"\n{self.device_type} COMM STATUS: Receiving file and placing it in directory "
               f"[{file_path[:-len(file_name)]}] under name <{file_name}>.")
 
         # Determine the socket to receive data from, depending on device type (default to client)
@@ -228,7 +228,7 @@ class TCPFileTransfer(CommunicationInterface):
             # Write received data to the file (wow python makes this easy)
             open_file.write(recv_data);
 
-        print(f"{self.device_type} STATUS: File <{file_name}> fully received.")
+        print(f"{self.device_type} COMM STATUS: File <{file_name}> fully received.")
 
 
     def send_command(self, command):
@@ -289,7 +289,7 @@ class TCPFileTransfer(CommunicationInterface):
         connection.
         """
 
-        print(f"\n{self.device_type} STATUS: Shutting down connection... ", end = '');
+        print(f"\n{self.device_type} COMM STATUS: Shutting down connection... ", end = '');
         if self.device_type == DeviceTypes.TCPSERVER:
             self.server_socket.close();
         elif self.device_type == DeviceTypes.TCPCLIENT:
